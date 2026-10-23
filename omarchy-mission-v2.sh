@@ -67,11 +67,11 @@ mount --bind /proc $R/proc; mount --make-rslave $R/proc
 mount --rbind /sys  $R/sys; mount --make-rslave $R/sys
 mount --rbind /dev  $R/dev; mount --make-rslave $R/dev
 cp /etc/resolv.conf $R/etc/resolv.conf
-# --- 4c. ONE RAM LAW AMENDMENT: pacman cache lives on DISK (raft), not RAM tmpfs ---
-mkdir -p /mnt/raft/pacman-cache
+# --- 4c. ONE RAM LAW AMENDMENT v2: cache lives on the TARGET (btrfs, real perms), not RAM, not FAT raft ---
+mkdir -p /mnt/omarchy/var/cache/pacman/pkg
 mkdir -p $R/var/cache/pacman/pkg
-mount --bind /mnt/raft/pacman-cache $R/var/cache/pacman/pkg
-echo "pacman cache -> raft disk (RAM protected)"
+mount --bind /mnt/omarchy/var/cache/pacman/pkg $R/var/cache/pacman/pkg
+echo "pacman cache -> target btrfs (RAM protected, Unix perms intact)"
 mkdir -p $R/mnt/omarchy
 mount --bind /mnt/omarchy $R/mnt/omarchy
 echo "workshop ready in RAM"
