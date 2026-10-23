@@ -52,6 +52,12 @@ mkdir -p $R/mnt/omarchy
 mount --bind /mnt/omarchy $R/mnt/omarchy
 echo "workshop ready in RAM"
 
+# --- 4b. ARCH MIRROR FIX: bootstrap ships ALL mirrors commented out ---
+sed -i "s/^#Server/Server/" $R/etc/pacman.d/mirrorlist
+MIRRORS=$(grep -c "^Server" $R/etc/pacman.d/mirrorlist || true)
+[ "$MIRRORS" -gt 0 ] || { echo "FATAL: no mirrors available"; exit 1; }
+echo "mirrors enabled: $MIRRORS"
+
 # --- 5. pacstrap Arch into the target (the long stretch — SMR disk, silence = breathing) ---
 chroot $R /bin/bash -c "pacman -Sy --noconfirm archlinux-keyring && pacstrap -K /mnt/omarchy base linux linux-firmware btrfs-progs sudo networkmanager curl sbsigntool vim mokutil"
 echo "pacstrap done"
