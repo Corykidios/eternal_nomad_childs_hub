@@ -22,6 +22,14 @@ REALDISK=$(lsblk -rno NAME,PKNAME | awk -v r="$RAFTNAME" '$1==r{print $2}' | hea
 DISK="/dev/$REALDISK"
 echo "disk: $DISK (raft: $RAFTNAME)"
 
+# --- 0c. HEAL: recreate any missing /dev nodes for this disk (kernel sees all; nodes can vanish after mount cascades) ---
+NODES=$(lsblk -rno NAME,MAJ:MIN "$DISK" 2>/dev/null | awk '{print $1" "$2}' | tr ':' ' ')
+for disknode in $(lsblk -rno NAME,MAJ:MIN "$DISK" 2>/dev/null | awk -F'[: ]' '{print $1":"$2":"$3}'); do
+  nm=$(echo "$disknode" | cut -d: -f1); mj=$(echo "$disknode" | cut -d: -f2); mn=$(echo "$disknode" | cut -d: -f3)
+  [ -e "/dev/$nm" ] || { mknod "/dev/$nm" b "$mj" "$mn" 2>/dev/null || true; echo "healed node: /dev/$nm"; }
+done
+[ -e "$DISK" ] || { echo "FATAL: $DISK still missing after heal"; exit 1; }
+
 # --- 1. undo the early bad mount (raft was mounted AT /mnt) ---
 mountpoint -q /mnt && { umount /mnt/omarchy 2>/dev/null || true; umount /mnt/raft 2>/dev/null || true; umount /mnt 2>/dev/null || true; }
 
