@@ -10,11 +10,20 @@ echo "=============================================="
 # --- 0. live-env tools (install if missing) ---
 NEED=""
 for t in tar zstd mkfs.btrfs sbsign mokutil; do command -v $t >/dev/null || NEED="$NEED $t"; done
-[ -n "$NEED" ] && apt-get update -qq && apt-get install -y -qq btrfs-progs zstd sbsigntool mokutil
+[ -n "$NEED" ] && { echo "installing tools: $NEED (may take a minute)..."; apt-get update -qq; apt-get install -y -qq btrfs-progs zstd sbsigntool mokutil; }
+echo "tools OK"
 for t in tar zstd mkfs.btrfs sbsign mokutil; do command -v $t >/dev/null || { echo "FATAL: $t missing"; exit 1; }; done
 # --- 0b. find the REAL disk: the one containing partition labels OMARCHYRAFT/OMARCHYVEST ---
-REALDISK=$(lsblk -rno NAME,TYPE | awk '$2=="disk"{print $1}' | while read d; do lsblk -rno LABEL "/dev/$d" 2>/dev/null | grep -qiE "OMARCHYRAFT|OMARCHYVEST" && echo "$d" && break; done)
-[ -n "$REALDISK" ] || REALDISK=$(lsblk -rno NAME,TYPE | awk '$2=="disk"{print $1}' | head -1)
+REALDISK=""
+for d in $(lsblk -rno NAME,TYPE | awk '$2=="disk"{print $1}'); do
+  if lsblk -rno LABEL "/dev/$d" 2>/dev/null | grep -qiE "OMARCHYRAFT|OMARCHYVEST"; then REALDISK="$d"; break; fi
+done
+if [ -z "$REALDISK" ]; then
+  for d in $(lsblk -rno NAME,TYPE | awk '$2=="disk"{print $1}'); do
+    if lsblk -rno LABEL "/dev/$d" 2>/dev/null | grep -q "OMARCHY"; then REALDISK="$d"; break; fi
+  done
+fi
+[ -n "$REALDISK" ] || { echo "FATAL: no disk found with OMARCHY labels"; lsblk; exit 1; }
 DISK="/dev/$REALDISK"
 echo "disk: $DISK"
 
