@@ -53,12 +53,12 @@ else
   echo "kernel installed"
 fi
 
-# --- 6. initramfs: build ONLY if missing ---
+# --- 6. initramfs: build ONLY if missing (DIRECT -g build; no preset parser; btrfs forced) ---
 if [ -f /mnt/omarchy/boot/initramfs-linux.img ]; then
   echo "initramfs present"
 else
-  echo "building initramfs"
-  arch-chroot /mnt/omarchy mkinitcpio -p linux
+  echo "building initramfs (direct build, btrfs module forced)"
+  arch-chroot /mnt/omarchy /bin/bash -c 'sed -i "s/^MODULES=()/MODULES=(btrfs)/" /etc/mkinitcpio.conf; grep -q "MODULES=(btrfs" /etc/mkinitcpio.conf || sed -i "s/^MODULES=(/MODULES=(btrfs /" /etc/mkinitcpio.conf; KVER=$(ls /usr/lib/modules | head -1); echo "kernel version: $KVER"; mkinitcpio -c /etc/mkinitcpio.conf -g /boot/initramfs-linux.img -k "$KVER"'
 fi
 
 # --- 7. user cory (idempotent) ---
