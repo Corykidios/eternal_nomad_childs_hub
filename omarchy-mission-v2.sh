@@ -41,7 +41,10 @@ echo "$UUID" > /mnt/raft/omarchy-uuid.txt
 echo "target: $PART  uuid: $UUID"
 
 # --- 4. RAM workshop: extract bootstrap to /tmp (tmpfs: symlinks live free) ---
-rm -rf /tmp/ab; mkdir -p /tmp/ab
+# --- 4a. clean any previous run's workshop mounts (idempotent rerun) ---
+for m in /tmp/ab/root.x86_64/mnt/omarchy /tmp/ab/root.x86_64/dev /tmp/ab/root.x86_64/sys /tmp/ab/root.x86_64/proc; do umount -R "$m" 2>/dev/null || true; done
+rm -rf /tmp/ab
+mkdir -p /tmp/ab
 tar --use-compress-program=unzstd -xf /mnt/raft/archlinux-bootstrap-x86_64.tar.zst -C /tmp/ab
 R=/tmp/ab/root.x86_64
 mount --bind /proc $R/proc
