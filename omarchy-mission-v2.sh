@@ -91,7 +91,7 @@ MIRRORS=$(grep -c "^Server" $R/etc/pacman.d/mirrorlist || true)
 echo "mirrors enabled: $MIRRORS"
 
 # --- 5. pacstrap Arch into the target (the long stretch — SMR disk, silence = breathing) ---
-chroot $R /bin/bash -c "pacman -Sy --noconfirm archlinux-keyring && pacstrap -K /mnt/omarchy base linux linux-firmware btrfs-progs sudo networkmanager curl sbsigntool vim mokutil"
+chroot $R /bin/bash -c "pacman-key --init && pacman-key --populate archlinux && pacman -Sy --noconfirm archlinux-keyring && pacstrap -K /mnt/omarchy base linux linux-firmware btrfs-progs sudo networkmanager curl sbsigntool vim mokutil"
 echo "pacstrap done"
 
 # --- 6. fstab (manual, exact) ---
