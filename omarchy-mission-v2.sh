@@ -93,7 +93,7 @@ echo "mirrors enabled: $MIRRORS"
 # --- 5. pacstrap Arch into the target (the long stretch — SMR disk, silence = breathing) ---
 chroot $R /bin/bash -c "pacman-key --init && pacman-key --populate archlinux" || { echo "FATAL: keyring init failed"; exit 1; }
 chroot $R /bin/bash -c "pacman -Sy --noconfirm --overwrite '*' archlinux-keyring 2>/dev/null || pacman -Sy --noconfirm --overwrite 'usr/share/pacman/keyrings/*' archlinux-keyring || echo 'keyring already present - continuing'"
-chroot $R /bin/bash -c "pacstrap -K /mnt/omarchy base linux linux-firmware btrfs-progs sudo networkmanager curl sbsigntoolss sbctl vim mokutil"
+chroot $R /bin/bash -c "pacstrap -K /mnt/omarchy base linux linux-firmware btrfs-progs sudo networkmanager curl sbsigntools sbctl vim mokutil"
 echo "pacstrap done"
 
 # --- 6. fstab (manual, exact) ---
