@@ -17,8 +17,8 @@ for t in tar zstd mkfs.btrfs sbsign mokutil; do command -v $t >/dev/null || { ec
 # --- find disk via PARTITION->PKNAME (whole-system table, proven on this hull) ---
 RAFTNAME=$(lsblk -rno NAME,LABEL | awk '$2=="OMARCHYRAFT"{print $1}' | head -1)
 [ -n "$RAFTNAME" ] || { echo "FATAL: OMARCHYRAFT partition not found"; lsblk; exit 1; }
-REALDISK=$(lsblk -rno PKNAME "/dev/$RAFTNAME" | head -1 | tr -d ' ')
-[ -n "$REALDISK" ] || { echo "FATAL: parent disk of $RAFTNAME not found"; exit 1; }
+REALDISK=$(lsblk -rno NAME,PKNAME | awk -v r="$RAFTNAME" '$1==r{print $2}' | head -1 | tr -d ' ')
+[ -n "$REALDISK" ] || { echo "FATAL: parent disk of $RAFTNAME not found"; lsblk -o NAME,PKNAME; exit 1; }
 DISK="/dev/$REALDISK"
 echo "disk: $DISK (raft: $RAFTNAME)"
 
