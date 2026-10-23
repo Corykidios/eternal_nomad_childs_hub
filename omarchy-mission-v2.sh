@@ -12,7 +12,11 @@ NEED=""
 for t in tar zstd mkfs.btrfs sbsign mokutil; do command -v $t >/dev/null || NEED="$NEED $t"; done
 [ -n "$NEED" ] && apt-get update -qq && apt-get install -y -qq btrfs-progs zstd sbsigntool mokutil
 for t in tar zstd mkfs.btrfs sbsign mokutil; do command -v $t >/dev/null || { echo "FATAL: $t missing"; exit 1; }; done
-[ -b /dev/sda ] || { echo "FATAL: /dev/sda not found"; exit 1; }
+# --- 0b. find the REAL disk: the one containing partition labels OMARCHYRAFT/OMARCHYVEST ---
+REALDISK=$(lsblk -rno NAME,TYPE | awk '$2=="disk"{print $1}' | while read d; do lsblk -rno LABEL "/dev/$d" 2>/dev/null | grep -qiE "OMARCHYRAFT|OMARCHYVEST" && echo "$d" && break; done)
+[ -n "$REALDISK" ] || REALDISK=$(lsblk -rno NAME,TYPE | awk '$2=="disk"{print $1}' | head -1)
+DISK="/dev/$REALDISK"
+echo "disk: $DISK"
 
 # --- 1. undo the early bad mount (raft was mounted AT /mnt) ---
 mountpoint -q /mnt && { umount /mnt/omarchy 2>/dev/null || true; umount /mnt/raft 2>/dev/null || true; umount /mnt 2>/dev/null || true; }
@@ -27,8 +31,8 @@ echo "raft contents: $(ls /mnt/raft | tr '\n' ' ')"
 PART="/dev/$(lsblk -rno NAME,LABEL | awk '$2=="OMARCHY"{print $1}' | head -1)"
 if [ -z "$PART" ] || [ ! -b "$PART" ]; then
   echo "carving new partition..."
-  sfdisk --no-reread --force --append /dev/sda <<< ",+,L"
-  partprobe /dev/sda; sleep 3
+  sfdisk --no-reread --force --append "$DISK" <<< ",+,L"
+  partprobe "$DISK"; sleep 3
   PART="/dev/$(lsblk -rno NAME,TYPE | awk '$2=="part"{print $1}' | tail -1)"
   echo "new partition: $PART"
   mkfs.btrfs -f -L OMARCHY "$PART"
@@ -126,7 +130,7 @@ menuentry "Power off" { halt }
 CFG
 cp /tmp/vest-grub.cfg /mnt/vest/boot/grub/grub.cfg
 mkdir -p /mnt/esp
-mountpoint -q /mnt/esp || mount /dev/sda1 /mnt/esp
+mountpoint -q /mnt/esp || mount "${DISK}1" /mnt/esp
 cp /tmp/vest-grub.cfg /mnt/esp/boot/grub/grub.cfg
 echo "vest + ESP wired"
 
