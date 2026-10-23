@@ -58,7 +58,7 @@ echo "target: $PART  uuid: $UUID"
 
 # --- 4. RAM workshop: extract bootstrap to /tmp (tmpfs: symlinks live free) ---
 # --- 4a. clean any previous run's workshop mounts (idempotent rerun) ---
-for m in /tmp/ab/root.x86_64/var/cache/pacman/pkg /tmp/ab/root.x86_64/mnt/omarchy /tmp/ab/root.x86_64/dev /tmp/ab/root.x86_64/sys /tmp/ab/root.x86_64/proc; do umount -R "$m" 2>/dev/null || umount -l "$m" 2>/dev/null || true; done
+for m in /tmp/ab/root.x86_64/var/lib/pacman /tmp/ab/root.x86_64/root/.gnupg /tmp/ab/root.x86_64/var/cache/pacman/pkg /tmp/ab/root.x86_64/mnt/omarchy /tmp/ab/root.x86_64/dev /tmp/ab/root.x86_64/sys /tmp/ab/root.x86_64/proc; do umount -R "$m" 2>/dev/null || umount -l "$m" 2>/dev/null || true; done
 rm -rf /tmp/ab
 mkdir -p /tmp/ab
 tar --use-compress-program=unzstd -xf /mnt/raft/archlinux-bootstrap-x86_64.tar.zst -C /tmp/ab
@@ -74,6 +74,14 @@ mount --bind /mnt/omarchy/var/cache/pacman/pkg $R/var/cache/pacman/pkg
 echo "pacman cache -> target btrfs (RAM protected, Unix perms intact)"
 mkdir -p $R/mnt/omarchy
 mount --bind /mnt/omarchy $R/mnt/omarchy
+
+# --- 4d. gnupg/keyring dirs on disk too (tmpfs chokes pacman-key --init) ---
+mkdir -p /mnt/omarchy/var/lib/pacman /mnt/omarchy/root/.gnupg
+mkdir -p $R/var/lib/pacman $R/root/.gnupg
+mount --bind /mnt/omarchy/var/lib/pacman $R/var/lib/pacman
+mount --bind /mnt/omarchy/root/.gnupg $R/root/.gnupg
+echo "keyring homes -> target disk (init will succeed)"
+
 echo "workshop ready in RAM"
 
 # --- 4b. ARCH MIRROR FIX: bootstrap ships ALL mirrors commented out ---
