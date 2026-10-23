@@ -143,7 +143,8 @@ echo "re-sign hook installed"
 echo "=================================================="
 echo "  NEXT: password prompt(s) — TYPE: omarchy"
 echo "=================================================="
-arch-chroot /mnt/omarchy mokutil --import /etc/sbkeys/MOK.crt
+arch-chroot /mnt/omarchy openssl x509 -in /etc/sbkeys/MOK.crt -outform DER -out /etc/sbkeys/MOK.der
+arch-chroot /mnt/omarchy mokutil --import /etc/sbkeys/MOK.der
 
 echo "=============================================="
 echo "  ALL DONE — $(date)"
