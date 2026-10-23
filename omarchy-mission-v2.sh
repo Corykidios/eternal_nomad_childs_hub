@@ -55,9 +55,9 @@ rm -rf /tmp/ab
 mkdir -p /tmp/ab
 tar --use-compress-program=unzstd -xf /mnt/raft/archlinux-bootstrap-x86_64.tar.zst -C /tmp/ab
 R=/tmp/ab/root.x86_64
-mount --bind /proc $R/proc
-mount --rbind /sys  $R/sys
-mount --rbind /dev  $R/dev
+mount --bind /proc $R/proc; mount --make-rslave $R/proc
+mount --rbind /sys  $R/sys; mount --make-rslave $R/sys
+mount --rbind /dev  $R/dev; mount --make-rslave $R/dev
 cp /etc/resolv.conf $R/etc/resolv.conf
 mkdir -p $R/mnt/omarchy
 mount --bind /mnt/omarchy $R/mnt/omarchy
@@ -77,9 +77,9 @@ echo "pacstrap done"
 echo "UUID=$UUID / btrfs defaults,noatime 0 1" > /mnt/omarchy/etc/fstab
 
 # --- 7. configure the new system ---
-mount --rbind /proc /mnt/omarchy/proc 2>/dev/null || true
-mount --rbind /sys  /mnt/omarchy/sys  2>/dev/null || true
-mount --rbind /dev  /mnt/omarchy/dev  2>/dev/null || true
+mount --rbind /proc /mnt/omarchy/proc 2>/dev/null || true; mount --make-rslave /mnt/omarchy/proc 2>/dev/null || true
+mount --rbind /sys  /mnt/omarchy/sys  2>/dev/null || true; mount --make-rslave /mnt/omarchy/sys 2>/dev/null || true
+mount --rbind /dev  /mnt/omarchy/dev  2>/dev/null || true; mount --make-rslave /mnt/omarchy/dev 2>/dev/null || true
 chroot /mnt/omarchy /bin/bash -c "
 ln -sf /usr/share/zoneinfo/America/New_York /etc/localtime
 sed -i 's/^#en_US.UTF-8/en_US.UTF-8/' /etc/locale.gen
