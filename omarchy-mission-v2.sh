@@ -14,18 +14,13 @@ for t in tar zstd mkfs.btrfs sbsign mokutil; do command -v $t >/dev/null || NEED
 echo "tools OK"
 for t in tar zstd mkfs.btrfs sbsign mokutil; do command -v $t >/dev/null || { echo "FATAL: $t missing"; exit 1; }; done
 # --- 0b. find the REAL disk: the one containing partition labels OMARCHYRAFT/OMARCHYVEST ---
-REALDISK=""
-for d in $(lsblk -rno NAME,TYPE | awk '$2=="disk"{print $1}'); do
-  if lsblk -rno LABEL "/dev/$d" 2>/dev/null | grep -qiE "OMARCHYRAFT|OMARCHYVEST"; then REALDISK="$d"; break; fi
-done
-if [ -z "$REALDISK" ]; then
-  for d in $(lsblk -rno NAME,TYPE | awk '$2=="disk"{print $1}'); do
-    if lsblk -rno LABEL "/dev/$d" 2>/dev/null | grep -q "OMARCHY"; then REALDISK="$d"; break; fi
-  done
-fi
-[ -n "$REALDISK" ] || { echo "FATAL: no disk found with OMARCHY labels"; lsblk; exit 1; }
+# --- find disk via PARTITION->PKNAME (whole-system table, proven on this hull) ---
+RAFTNAME=$(lsblk -rno NAME,LABEL | awk '$2=="OMARCHYRAFT"{print $1}' | head -1)
+[ -n "$RAFTNAME" ] || { echo "FATAL: OMARCHYRAFT partition not found"; lsblk; exit 1; }
+REALDISK=$(lsblk -rno PKNAME "/dev/$RAFTNAME" | head -1 | tr -d ' ')
+[ -n "$REALDISK" ] || { echo "FATAL: parent disk of $RAFTNAME not found"; exit 1; }
 DISK="/dev/$REALDISK"
-echo "disk: $DISK"
+echo "disk: $DISK (raft: $RAFTNAME)"
 
 # --- 1. undo the early bad mount (raft was mounted AT /mnt) ---
 mountpoint -q /mnt && { umount /mnt/omarchy 2>/dev/null || true; umount /mnt/raft 2>/dev/null || true; umount /mnt 2>/dev/null || true; }
